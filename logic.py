@@ -1,18 +1,23 @@
+import json
+from socket import socket
+
+from Player import Player
+
 letters_dict = {"a": 0, "b": 1, "c": 2}
 
 
 def check_wins(table: list, players_dict: dict):
     for i in range(3):
         if table[i][0] != "." and table[i][0] == table[i][1] == table[i][2]:
-            return players_dict[table[i][0]]
+            return find_player_by_sign(players_dict, table[i][0])
 
     for i in range(3):
         if table[0][i] != "." and table[0][i] == table[1][i] == table[2][i]:
-            return players_dict[table[0][i]]
+            return find_player_by_sign(players_dict, table[0][i])
 
     if ((table[0][0] != "." and table[0][0] == table[1][1] == table[2][2]) or (
             table[0][2] != "." and table[0][2] == table[1][1] == table[2][0])):
-        return players_dict[table[1][0]]
+        return find_player_by_sign(players_dict, table[1][1])
 
     for i in range(3):
         for j in range(3):
@@ -47,30 +52,11 @@ def display_table(table: list):
     print("\n")
 
 
-if __name__ == "__main__":
-    table_glob = [[".", ".", "."], [".", ".", "."], [".", ".", "."], ]
-    players_dict_glob = {"X": input("Enter nick one:"), "O": input("Enter nick two:")}
+def find_player_by_sign(players_dict: dict, sign: str) -> Player:
+    for key in players_dict.keys():
+        if players_dict[key].sign == sign:
+            return players_dict[key]
 
-    while check_wins(table_glob, players_dict_glob) != "none":
 
-        display_table(table_glob)
-        print(players_dict_glob["X"] + " turn:")
-
-        while not assign_field(table_glob, "X", input()):
-            display_table(table_glob)
-            print("This field is already assigned!\n")
-
-        if check_wins(table_glob, players_dict_glob) != "none":
-            break
-
-        display_table(table_glob)
-        print(players_dict_glob["O"] + " turn:")
-        while not assign_field(table_glob, "O", input()):
-            print("This field is already assigned!\n")
-
-    display_table(table_glob)
-    end_cause = check_wins(table_glob, players_dict_glob)
-    if end_cause != "tie":
-        print("Game ended, " + end_cause + " won!")
-    else:
-        print("Game ended, you both tied!")
+def socket_input_to_dict(sck: socket) -> dict:
+    return dict(json.loads(sck.recv(1024)))
