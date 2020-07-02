@@ -1,36 +1,35 @@
-import json
 import socket
 
-from logic import socket_input_to_dict, display_table
+from game_logic import display_table
+from multiplayer_logic import read_socket_to_dict, write_socket_from_dict
 
 if __name__ == "__main__":
     sck = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sck.connect(('127.0.0.1', 2137))
-    
+
+    messages_buffer = b''
+
     # connecting to server and setting nickname
-    data_dict = {"status":"NOK"}
-    while data_dict["status"] == "NOK":
-        sck.sendall(json.dumps({"nickname": input("Type in nickname: ")}).encode('utf-8'))
-        data_dict = socket_input_to_dict(sck)
+    data_dict = {"token": 1}
+    while data_dict["token"] == 1:
+        write_socket_from_dict(sck, {"nickname": input("Type in nickname: ")})
+        messages_buffer, data_dict = read_socket_to_dict(sck, messages_buffer)
         print(data_dict["msg"])
 
-    print(data_dict)
     while data_dict["token"] != 3:
-        data_dict = socket_input_to_dict(sck)
-        print(data_dict["msg"])
-        display_table(data_dict["table"])
+        messages_buffer, data_dict = read_socket_to_dict(sck, messages_buffer)
 
-        if data_dict["token"] == 0 or data_dict["token"] == 3:
-            continue
+        if data_dict["token"] == 0:
+            print(data_dict["msg"])
+        elif data_dict["token"] == 1:
+            print(data_dict["msg"])
+            display_table(data_dict["table"])
+            while data_dict["token"] == 1:
+                write_socket_from_dict(sck, {"move": input("Type in move: ")})
+                messages_buffer, data_dict = read_socket_to_dict(sck, messages_buffer)
+                display_table(data_dict["table"])
+                print(data_dict["msg"])
 
-        sck.sendall(json.dumps({"move": input("Type in move: ")}).encode('utf-8'))
-        data_dict = socket_input_to_dict(sck)
-        while data_dict["status"] == "NOK":
-            data_dict = socket_input_to_dict(sck)
-            sck.sendall(json.dumps({"move": input("Type in move: ")}).encode('utf-8'))
-        display_table(data_dict["table"])
-
+    display_table(data_dict["table"])
     print(data_dict["msg"])
-
     sck.close()
-
